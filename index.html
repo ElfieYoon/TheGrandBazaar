@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Grand Bazaar Quest &middot; Find Your Procurement Archetype</title>
+
+  <!-- ============================================================
+       FONTS: Google Fonts - Cinzel Decorative, Cinzel, Poppins
+       Cinzel Decorative: quiz title + archetype name (preserved)
+       Cinzel: "You are..." header (preserved)
+       Poppins: all other text (standardised)
+       ============================================================ -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@500;600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+
+    /* ============================================================
+       RESET & BASE BODY
+       ============================================================ */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Poppins',sans-serif;min-height:100vh;padding:58px 24px 64px;position:relative;overflow-x:hidden;color:#1c1208;background:linear-gradient(160deg,#3a0010 0%,#650e1c 28%,#7d1a1a 52%,#5c0e0e 76%,#350008 100%);background-attachment:fixed}
+
+    /* ============================================================
+       BACKGROUND: Floating particle shapes
+       ============================================================ */
+    .bgs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+    .bgi{position:absolute;opacity:.042;animation:bgf linear infinite}
+    @keyframes bgf{0%{transform:translateY(110vh) rotate(0)}100%{transform:translateY(-20vh) rotate(360deg)}}
+
+    /* ============================================================
+       LAYOUT: Main app container
+       ============================================================ */
+    #app{max-width:680px;margin:0 auto;position:relative;z-index:10}
+
+    /* ============================================================
+       CARD: Shared card container styles
+       ============================================================ */
+    .card{background:#fff;border-radius:22px;box-shadow:0 4px 14px rgba(0,0,0,.24),0 14px 52px rgba(0,0,0,.3);overflow:hidden;margin-bottom:16px}
+
+    /* ============================================================
+       SCENE WINDOW: SVG illustration area at top of each card
+       ============================================================ */
+    .sw{position:relative;height:272px;overflow:hidden;background:#08001a}
+    .ssv{position:absolute;inset:0;width:100%;height:100%;transition:opacity .55s ease;animation:span 24s ease-in-out infinite;transform-origin:center}
+    @keyframes span{0%,100%{transform:scale(1.07) translate(0,0)}35%{transform:scale(1.08) translate(-8px,-4px)}68%{transform:scale(1.07) translate(7px,3px)}}
+    .sovl{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0) 25%,rgba(0,0,0,.65) 100%);pointer-events:none}
+
+    /* ============================================================
+       QUESTION CARD: Body content area
+       ============================================================ */
+    .qb{padding:18px 28px 24px}
+
+    /* Back button */
+    .back-btn{display:inline-flex;align-items:center;gap:5px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#800000;background:rgba(128,0,0,.07);border:1.5px solid rgba(128,0,0,.28);border-radius:100px;cursor:pointer;padding:5px 13px 5px 9px;margin-bottom:12px;letter-spacing:.3px;transition:color .15s,background .15s,border-color .15s;line-height:1;-webkit-appearance:none;appearance:none}
+    .back-btn:hover{background:rgba(128,0,0,.14);border-color:rgba(128,0,0,.5);color:#5c0000}
+    .back-btn:hover{color:#800000}
+    .back-btn svg{width:14px;height:14px;flex-shrink:0}
+    .back-btn.hidden{visibility:hidden;pointer-events:none}
+
+    /* Question number label */
+    .qn{font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#800000;margin-bottom:5px}
+
+    /* Question text — Poppins 500 at 15px */
+    .qt{font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;line-height:1.58;color:#1c1208;margin-bottom:15px}
+
+    /* ============================================================
+       ANSWER OPTIONS: 3D bubble-style answer buttons
+       ============================================================ */
+    .os{display:flex;flex-direction:column;gap:10px}
+
+    /* Outer wrapper — purely a hit-target and state container.
+       No filter/shadow here: Safari can paint native button chrome
+       underneath filter on a <button> even with appearance:none,
+       so all visual shadow styling lives on .ob-inner instead. */
+    .ob{
+      display:flex;align-items:center;gap:12px;
+      padding:0;
+      background:transparent;
+      border:none;
+      border-radius:100px;
+      cursor:pointer;
+      text-align:left;
+      font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;color:#3d2b1f;
+      opacity:0;transform:translateY(8px);
+      width:100%;
+      position:relative;
+      -webkit-appearance:none;appearance:none;
+      transition:transform .17s,opacity .3s;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    /* Inner pill — the visible bubble surface.
+       Generous border-radius and soft inset shading give a rounded, cloud-like depth.
+       Subtle top-light and bottom-shade mimic a gentle light source from above. */
+    .ob-inner{
+      display:flex;align-items:center;gap:12px;
+      width:100%;
+      padding:12px 16px;
+      border-radius:100px;
+      background:#ffffff;
+      /* Soft inset: faint top highlight + very gentle bottom shade + hairline edge */
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,.9),
+        inset 0 -3px 6px rgba(0,0,0,.04),
+        inset 0 0 0 1px rgba(0,0,0,.05);
+      /* Soft layered drop shadow (moved here from .ob to avoid Safari button-chrome quirk) */
+      filter:drop-shadow(0 3px 0px rgba(0,0,0,.08)) drop-shadow(0 5px 12px rgba(0,0,0,.09));
+      transition:background .17s,box-shadow .17s,filter .17s;
+      position:relative;
+    }
+
+
+    /* Entrance animation — preserves original stagger behaviour */
+    .ob.in{opacity:1;transform:translateY(0)}
+
+    /* Hover: lift up, deepen shadow, warm tint */
+    .ob:hover{
+      transform:translateY(-2px);
+    }
+    .ob:hover .ob-inner{
+      background:#fffdf5;
+      filter:drop-shadow(0 5px 2px rgba(0,0,0,.08)) drop-shadow(0 8px 18px rgba(0,0,0,.11));
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,.95),
+        inset 0 -3px 6px rgba(0,0,0,.04),
+        inset 0 0 0 1px rgba(217,119,6,.28);
+    }
+
+    /* Active/press: push down, flatten shadow */
+    .ob:active{
+      transform:translateY(1px);
+    }
+    .ob:active .ob-inner{
+      filter:drop-shadow(0 2px 0px rgba(0,0,0,.12)) drop-shadow(0 3px 8px rgba(0,0,0,.12));
+      box-shadow:
+        inset 0 1px 3px rgba(255,255,255,.8),
+        inset 0 -2px 4px rgba(0,0,0,.04),
+        inset 0 0 0 1px rgba(217,119,6,.22);
+    }
+
+    /* Selected state: warm amber bubble */
+    .ob.sel .ob-inner{
+      background:#fef3c7;
+      filter:drop-shadow(0 3px 0px rgba(180,83,9,.14)) drop-shadow(0 5px 12px rgba(180,83,9,.12));
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,.85),
+        inset 0 -3px 6px rgba(180,83,9,.08),
+        inset 0 0 0 1px rgba(217,119,6,.45);
+    }
+
+    /* Option letter label (A/B/C bubble) */
+    .ol{
+      min-width:28px;height:28px;border-radius:50%;
+      background:#eceae3;
+      display:flex;align-items:center;justify-content:center;
+      font-size:11px;font-weight:700;letter-spacing:.5px;color:#444441;
+      flex-shrink:0;
+      transition:background .17s,color .17s;
+      position:relative;z-index:1;
+    }
+    .ob.sel .ol{background:#444441;color:#fff}
+
+    /* ============================================================
+       INTRO CARD: Title, description, and start button
+       ============================================================ */
+    .ib{padding:32px 31px 36px;text-align:center}
+    .ik{display:inline-block;font-family:'Poppins',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#800000;margin-bottom:16px}
+    .it{font-family:'Cinzel Decorative',serif;font-size:22px;line-height:1.3;color:#1c1208;margin-bottom:22px}
+    .it em{color:#b45309;font-style:normal}
+    .is{font-family:'Poppins',sans-serif;font-size:14px;color:#6b5c4a;line-height:1.78;max-width:480px;margin:0 auto 20px}
+    /* Introductory text on quiz start page — Poppins 14px */
+    .is-intro{font-family:'Poppins',sans-serif;font-size:14px;color:#6b5c4a;line-height:1.75;max-width:440px;margin:0 auto 20px}
+
+    /* Intro characteristic tags */
+    .ich{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:26px}
+    .ich span{font-size:12px;font-weight:600;padding:4px 12px;border-radius:100px;border:1.5px solid}
+
+    /* ============================================================
+       PRIMARY CTA BUTTON: 3D balloon style, maroon-red
+       Matches the answer option bubble aesthetic.
+       ============================================================ */
+
+    /* Outer wrapper: transparent, carries drop-shadow depth */
+    .bs{
+      display:inline-block;
+      padding:0;
+      background:transparent;
+      border:none;
+      border-radius:100px;
+      cursor:pointer;
+      font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;
+      letter-spacing:.3px;
+      -webkit-appearance:none;appearance:none;
+      filter:drop-shadow(0 4px 0px rgba(58,0,16,.35)) drop-shadow(0 6px 16px rgba(58,0,16,.28));
+      transition:filter .17s,transform .17s;
+      -webkit-tap-highlight-color:transparent;
+      text-decoration:none;
+    }
+    /* Inner pill: maroon-red surface with soft top-light inset */
+    .bs-inner{
+      display:block;
+      padding:13px 38px;
+      border-radius:100px;
+      background:#7a1520;
+      color:#fff;
+      font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;
+      letter-spacing:.3px;
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,.18),
+        inset 0 -3px 6px rgba(0,0,0,.18),
+        inset 0 0 0 1px rgba(0,0,0,.12);
+      transition:background .17s,box-shadow .17s;
+      white-space:nowrap;
+    }
+    .bs:hover{
+      transform:translateY(-2px);
+      filter:drop-shadow(0 6px 2px rgba(58,0,16,.3)) drop-shadow(0 10px 22px rgba(58,0,16,.32));
+    }
+    .bs:hover .bs-inner{background:#8e1a26}
+    .bs:active{
+      transform:translateY(1px);
+      filter:drop-shadow(0 2px 0px rgba(58,0,16,.28)) drop-shadow(0 3px 8px rgba(58,0,16,.22));
+    }
+    .bs:active .bs-inner{background:#6b1018}
+
+
+    /* ============================================================
+       ANIMATION: Card entrance animation
+       ============================================================ */
+    .cin{animation:cin .42s cubic-bezier(.4,0,.2,1) both}
+    @keyframes cin{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ============================================================
+       CONFETTI: Falling particles on result reveal
+       ============================================================ */
+    .cf{position:fixed;pointer-events:none;z-index:999;animation:cfd linear forwards}
+    @keyframes cfd{0%{transform:translateY(-10px) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(540deg);opacity:0}}
+
+    /* ============================================================
+       RESPONSIVE: Mobile adjustments (480px and below)
+       ============================================================ */
+    @media(max-width:480px){body{padding:52px 12px 56px}.qb,.rb,.ib{padding:18px 16px 22px}.qt{font-size:14px}.it{font-size:19px}.is{font-size:12px}.rn{font-size:15px}.qb{padding-top:12px}.qn{margin-bottom:3px}#ptrack{margin-bottom:10px}}
+
+    /* ============================================================
+       MOBILE LANDSCAPE: question card becomes a side-by-side layout
+       (image left, question+answers right) since landscape phones
+       have little vertical room but plenty of horizontal room.
+       Scoped to orientation:landscape AND a short max-height so it
+       only targets actual phones in landscape, not resized desktop
+       browser windows that happen to be wide and short.
+       Desktop and mobile-portrait styles are untouched by this block.
+       ============================================================ */
+    @media(orientation:landscape) and (max-height:500px){
+      #qCard.qc-visible{display:flex;align-items:stretch;gap:0}
+      #qCard .qi-wrap{
+        width:38%;flex-shrink:0;
+        align-items:center;
+        padding:14px 10px;
+        background:transparent;
+      }
+      #qCard .qi-img{
+        max-width:100%;max-height:none;
+        width:auto;height:auto;
+        max-height:88vh;
+      }
+      #qCard .qb{
+        width:62%;
+        padding:14px 18px 14px 8px;
+        overflow-y:auto;
+        max-height:88vh;
+      }
+      #qCard .qn{margin-bottom:2px}
+      #qCard .qt{font-size:13px;line-height:1.4;margin-bottom:8px}
+      #qCard #ptrack{margin-bottom:8px}
+      #qCard .os{gap:6px}
+      #qCard .ob-inner{padding:9px 16px}
+    }
+
+
+    /* ============================================================
+       RESULTS v2: Full archetype result layout
+       ============================================================ */
+
+    /* ============================================================
+       RESULTS v3: Dark hero band ("You are" + character + aura + tag + name)
+       ============================================================ */
+    .r2-hero{background:#757575;padding:9px 24px 22px;text-align:center;margin:-1px -1px 0;}
+    .r2-ya{text-align:center;font-family:'Cinzel',serif;font-size:12px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:#f8f1e3;margin-bottom:4px}
+
+    /* Image enlarged 88px -> 110px (+25%) per approved Option C; padding/font sizes
+       above and below tightened by an exactly offsetting amount so the hero band's
+       total height is unchanged (verified: 177.8px before and after). */
+    .r2-char-wrap{position:relative;width:100px;height:100px;margin:0 auto 0;overflow:hidden;border-radius:8px;}
+    .r2-char-img{position:relative;z-index:2;width:100px;height:100px;display:block;object-fit:contain;animation:charFloat 12s ease-in-out infinite;}
+    @keyframes charFloat{0%,100%{transform:translateY(0) scale(1.85)}50%{transform:translateY(-6px) scale(1.85)}}
+
+    /* Aura glow behind character — recentred for the 100px wrap (2% size reduction) */
+    .r2-aura{position:absolute;width:46px;height:46px;border-radius:50%;top:27px;left:27px;filter:blur(16px);opacity:.6;animation:auraP 6s ease-in-out infinite;z-index:0;transition:background .4s}
+    @keyframes auraP{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:.55;transform:scale(1.2)}}
+
+    .r2-badge{display:inline-block;font-size:8px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:1px}
+    .r2-name{font-family:'Cinzel Decorative',serif;font-size:18px;line-height:1.2;color:#fff;word-break:break-word}
+
+    /* ============================================================
+       RESULTS v3: Your Strengths (full-width table, tinted background)
+       ============================================================ */
+    .r2-strengths-wrap{padding:16px 22px 0}
+    .r2-sec-hd{font-family:'Cinzel Decorative',serif;font-size:15px;font-weight:700;text-align:center;margin-bottom:9px;}
+    .r2-str-table{width:100%;border-collapse:collapse;table-layout:fixed;background:#f8f1e3;border-radius:10px;}
+    .r2-str-col-trait{width:20%}
+    .r2-str-table th{font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#9a7860;text-align:left;padding:10px 10px 6px 10px}
+    .r2-str-table th:last-child{padding:10px 10px 6px 24px}
+    .r2-str-table td{font-family:'Poppins',sans-serif;font-size:12px;color:#3d2b1f;padding:8px 10px 8px 10px;vertical-align:top;line-height:1.3;border-bottom:1px solid #e3d9c4}
+    .r2-str-table td:last-child{padding:8px 10px 8px 24px}
+    .r2-str-table tr:last-child td{padding-bottom:10px;border-bottom:none}
+
+    /* ============================================================
+       RESULTS v3: How You Work (donut) + A Rewarding Career (two-column)
+       ============================================================ */
+    .r2-mid{padding:16px 22px 18px;display:grid;grid-template-columns:25fr 75fr;gap:14px}
+    .r2-comp-box,.r2-career-box{background:#f8f1e3;border-radius:10px;padding:10px;}
+    .r2-donut-wrap{display:flex;justify-content:center;margin-bottom:8px}
+    .r2-comp-legend{font-family:'Poppins',sans-serif;font-size:11px;color:#3d2b1f;line-height:1.6}
+    .r2-comp-legend div{display:flex;align-items:center;gap:4px}
+    .r2-comp-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+    .r2-career-sub{margin-bottom:8px}
+    .r2-career-sub:last-child{margin-bottom:0}
+    .r2-career-sub-hd{font-family:'Poppins',sans-serif;font-size:11.5px;font-weight:700;margin-bottom:2px}
+    .r2-career-sub-body{font-family:'Poppins',sans-serif;font-size:11.5px;color:#3d2b1f;line-height:1.45}
+
+    /* Disclaimer footnote — small print, unobtrusive */
+    .r2-disclaimer{font-family:'Poppins',sans-serif;font-size:11px;font-style:italic;color:#6b5d4f;text-align:center;line-height:1.5;padding:0 22px;margin-top:2px;display:flex;align-items:flex-start;justify-content:center;gap:5px}
+    .r2-disclaimer svg{width:13px;height:13px;flex-shrink:0;margin-top:2px}
+
+    /* ============================================================
+       RESULTS v3: P3 card + secondary action buttons
+       ============================================================ */
+    .r2-actions-wrap{background:#f3ede0;border-top:1px solid #e8ddd0;padding:14px 22px 16px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;}
+    .r2-p3-card{display:inline-flex;align-items:center;gap:10px;border-radius:100px;padding:8px 8px 8px 16px;text-decoration:none;cursor:pointer;border:none;font-family:'Poppins',sans-serif;background:#800000;transition:transform .15s ease,box-shadow .15s ease;}
+    .r2-p3-card:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(58,0,16,.28);}
+    .r2-p3-card:active{transform:translateY(0);box-shadow:0 2px 4px rgba(58,0,16,.2);}
+    .r2-p3-eyebrow{font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:1px;text-align:left;color:rgba(255,255,255,.7);}
+    .r2-p3-title{font-size:11px;font-weight:700;text-align:left;color:#fff;}
+    .r2-p3-arrow{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+
+    .r2-secondary-btn{background:#fff;border:1px solid #e0d6c2;color:#5a4632;border-radius:100px;padding:8px 16px;font-size:9.5px;font-weight:600;white-space:nowrap;cursor:pointer;font-family:'Poppins',sans-serif;transition:background .15s,transform .15s ease,box-shadow .15s ease}
+    .r2-secondary-btn:hover{background:#f8f4ea;transform:translateY(-2px);box-shadow:0 4px 10px rgba(90,70,50,.18);}
+    .r2-secondary-btn:active{background:#efe8d8;transform:translateY(0);box-shadow:0 2px 4px rgba(90,70,50,.14);}
+
+    /* ============================================================
+       SPARKLE PARTICLES: Float up around character illustration
+       ============================================================ */
+    .spar{position:absolute;border-radius:50%;pointer-events:none;animation:sparF linear infinite}
+    @keyframes sparF{0%{opacity:0;transform:translateY(0) scale(0)}18%{opacity:.7}80%{opacity:.3}100%{opacity:0;transform:translateY(-44px) scale(1.4)}}
+
+    /* ============================================================
+       RESPONSIVE v3: Mobile overrides (480px and below)
+       ============================================================ */
+    @media(max-width:480px){
+      .r2-hero{padding:6px 18px 19px}
+      .r2-name{font-size:16px}
+      .r2-ya{font-size:12px}
+      .r2-sec-hd{font-size:13px}
+      .r2-mid{grid-template-columns:1fr;gap:10px}
+      .r2-str-table td,.r2-str-table th{font-size:12px}
+      .r2-str-col-trait{width:32%}
+      .r2-secondary-btn{font-size:9.5px;padding:9px 4px}
+      .r2-actions-wrap{flex-wrap:wrap}
+      .r2-actions-wrap .r2-p3-card{order:-1;width:100%;justify-content:center;margin-bottom:4px}
+      .r2-actions-wrap .r2-secondary-btn{flex:1}
+      .r2-char-wrap{width:98px;height:98px}
+      .r2-char-img{width:98px;height:98px}
+      .r2-aura{top:26px;left:26px}
+      .r2-comp-box{display:flex;align-items:center;gap:14px;padding:14px 16px}
+      .r2-donut-wrap{margin-bottom:0;flex-shrink:0}
+      .r2-comp-legend{flex:1}
+    }
+
+
+    /* ============================================================
+       PROGRESS TRACK: Step indicator bar at top of question card
+       ============================================================ */
+    #ptrack{display:flex;gap:7px;margin-bottom:14px}
+    .pts{flex:1;height:4px;border-radius:2px;background:rgba(0,0,0,.09);transition:background .35s}
+    .pts.done{background:linear-gradient(90deg,#800000,#DC143C)}
+    .pts.active{background:#fbbf24;animation:ptpulse 1s ease-in-out infinite alternate}
+    @keyframes ptpulse{from{opacity:.6}to{opacity:1}}
+
+
+    /* ============================================================
+       CTA LINK BUTTON: 3D balloon style, maroon-red
+       Used for the "Find out more about P³" outbound link.
+       ============================================================ */
+    .r2-cta-wrap{padding:8px 22px 12px;text-align:center}
+    /* Outer wrapper: transparent, carries drop-shadow depth */
+    .r2-cta-prominent{
+      display:inline-block;
+      padding:0;
+      background:transparent;
+      border-radius:100px;
+      text-decoration:none;
+      cursor:pointer;
+      filter:drop-shadow(0 4px 0px rgba(58,0,16,.35)) drop-shadow(0 6px 16px rgba(58,0,16,.28));
+      transition:filter .17s,transform .17s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    /* Inner pill: rendered as pseudo-element via padding trick —
+       since <a> cannot contain block children, we use padding + display
+       on the element itself and treat it as both wrapper and surface. */
+    .r2-cta-prominent{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:12px 34px;
+      background:#7a1520;
+      color:#fff;
+      font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:700;letter-spacing:.4px;
+      border-radius:100px;
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,.18),
+        inset 0 -3px 6px rgba(0,0,0,.18),
+        inset 0 0 0 1px rgba(0,0,0,.12);
+      transition:background .17s,box-shadow .17s,filter .17s,transform .17s;
+      filter:drop-shadow(0 4px 0px rgba(58,0,16,.35)) drop-shadow(0 6px 16px rgba(58,0,16,.28));
+    }
+    .r2-cta-prominent:hover{
+      background:#8e1a26;
+      transform:translateY(-2px);
+      filter:drop-shadow(0 6px 2px rgba(58,0,16,.3)) drop-shadow(0 10px 22px rgba(58,0,16,.32));
+    }
+    .r2-cta-prominent:active{
+      background:#6b1018;
+      transform:translateY(1px);
+      filter:drop-shadow(0 2px 0px rgba(58,0,16,.28)) drop-shadow(0 3px 8px rgba(58,0,16,.22));
+    }
+
+
+    /* ============================================================
+       RESULTS PAGE BUTTON PAIR
+       Side-by-side 3D balloon buttons at the bottom of the results card.
+       Lighter maroon-red surface, white text, equal width.
+       Stacks vertically on narrow mobile screens.
+       ============================================================ */
+    .r2-btn-pair{
+      display:flex;
+      gap:10px;
+      padding:0 22px 22px;
+      margin-top:20px;
+    }
+    /* Outer wrapper: transparent, carries the drop-shadow depth */
+    .r2-pair-btn{
+      flex:1;
+      padding:0;
+      background:transparent;
+      border:none;
+      border-radius:100px;
+      cursor:pointer;
+      font-family:'Poppins',sans-serif;font-size:12.5px;font-weight:600;
+      filter:drop-shadow(0 3px 0px rgba(58,0,16,.3)) drop-shadow(0 5px 14px rgba(58,0,16,.22));
+      transition:filter .17s,transform .17s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    /* Inner pill: lighter maroon-red, white text, soft inset bubble */
+    .r2-pair-btn-inner{
+      display:block;
+      width:100%;
+      padding:11px 14px;
+      border-radius:100px;
+      background:#800000;
+      color:#fff;
+      font-family:'Poppins',sans-serif;font-size:12.5px;font-weight:600;
+      text-align:center;
+      line-height:1.35;
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,.16),
+        inset 0 -3px 6px rgba(0,0,0,.16),
+        inset 0 0 0 1px rgba(0,0,0,.1);
+      transition:background .17s,box-shadow .17s;
+    }
+    .r2-pair-btn:hover{
+      transform:translateY(-2px);
+      filter:drop-shadow(0 5px 2px rgba(58,0,16,.26)) drop-shadow(0 8px 18px rgba(58,0,16,.28));
+    }
+    .r2-pair-btn:hover .r2-pair-btn-inner{background:#A8284C}
+    .r2-pair-btn:active{
+      transform:translateY(1px);
+      filter:drop-shadow(0 1px 0px rgba(58,0,16,.22)) drop-shadow(0 3px 8px rgba(58,0,16,.18));
+    }
+    .r2-pair-btn:active .r2-pair-btn-inner{background:#6E1731}
+    /* Stack vertically on narrow screens */
+    @media(max-width:480px){
+      .r2-btn-pair{flex-direction:column;gap:8px;padding:0 16px 18px}
+      .r2-pair-btn{width:100%}
+    }
+
+
+    /* ============================================================
+       QUESTION IMAGE: PNG banner above each question
+       All five source images normalised to a consistent 256x256
+       square canvas with matching content-to-canvas fill ratio,
+       so they render at a uniform visual size. Height is the
+       driving dimension (max-height), width scales proportionally
+       via object-fit:contain. Centred horizontally.
+       ============================================================ */
+    .qi-wrap{
+      width:100%;
+      background:transparent;
+      display:flex;
+      justify-content:center;
+      overflow:hidden;
+    }
+    .qi-img{
+      width:auto;
+      height:auto;
+      display:block;
+      object-fit:contain;
+      /* max-height drives the rendered size (images are square, so width
+         matches height automatically). transform:scale(1.1) crops a small
+         amount of white space around the artwork itself: the image is
+         scaled up slightly within its own footprint, and .qi-wrap's
+         overflow:hidden clips the excess, so the artwork fills a touch
+         more of the frame without changing the frame's own size. */
+      max-height:262px;
+      max-width:69%;
+      transform:scale(1.1);
+    }
+    @media(max-width:480px){
+      .qi-img{max-height:143px;max-width:73%}
+    }
+
+    /* ============================================================
+       ARCHETYPES POSTER MODAL
+       Triggered by "Meet fellow travellers" button on results page.
+       Shows the full poster PNG in a centred, scrollable overlay.
+       ============================================================ */
+    .poster-modal{
+      position:fixed;inset:0;z-index:1000;
+      background:rgba(20,12,6,.72);
+      display:none;
+      align-items:center;justify-content:center;
+      padding:24px;
+      overflow-y:auto;
+    }
+    .poster-modal.open{display:flex}
+    .poster-modal-inner{
+      position:relative;
+      max-width:560px;width:100%;
+      margin:auto;
+    }
+    .poster-modal-inner img{
+      display:block;width:100%;height:auto;
+      border-radius:14px;
+      box-shadow:0 12px 40px rgba(0,0,0,.4);
+    }
+    .poster-modal-close{
+      position:absolute;top:-16px;right:-16px;
+      width:36px;height:36px;border-radius:50%;
+      background:#800000;color:#fff;border:2px solid #fff;
+      font-size:18px;line-height:1;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 4px 10px rgba(0,0,0,.3);
+      transition:transform .15s ease;
+    }
+    .poster-modal-close:hover{transform:scale(1.08)}
+    @media(max-width:480px){
+      .poster-modal{padding:16px}
+      .poster-modal-close{top:-12px;right:-4px;width:32px;height:32px;font-size:16px}
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       BACKGROUND: Particle container (populated by JS below)
+       ============================================================ -->
+  <div class="bgs" id="bgs"></div>
+
+
+  <div id="app">
+
+    <!-- ============================================================
+         CARD 1: QUIZ START PAGE
+         Shown on page load. Describes the quiz and has the start button.
+         ============================================================ -->
+    <div class="card" id="iCard">
+      <div class="sw">
+        <svg class="ssv" id="iSvg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" viewBox="0 0 680 290"></svg>
+        <div class="sovl"></div>
+      </div>
+      <div class="ib">
+        <!-- Quiz metadata pill: question count and time estimate -->
+        <div class="ik">5 Questions &nbsp;&middot;&nbsp; ~ 2 Minutes</div>
+        <!-- Quiz title -->
+        <h1 class="it">The Grand Bazaar <em>Quest</em></h1>
+        <!-- Introductory text above start button -->
+        <p class="is-intro">After a long day of classes, all you wanted was a meal and rest. But a weird delivery app encounter sends you into the Grand Bazaar, a marketplace where mysterious things unfold. Find your way through and discover what it reveals about you.</p>
+        <!-- Start button -->
+        <button type="button" class="bs" onclick="startQuiz()"><span class="bs-inner">Place Your Order</span></button>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         CARD 2: QUESTION CARD
+         Hidden by default. Shown during the quiz. Re-rendered per question.
+         ============================================================ -->
+    <div class="card" id="qCard" style="display:none">
+      <!-- Question image: PNG displayed at full card width, height proportional -->
+      <div class="qi-wrap">
+        <img class="qi-img" id="qImg" src="" alt="Question scene">
+      </div>
+      <div class="qb">
+        <!-- Back button (hidden on question 1) -->
+        <button type="button" class="back-btn hidden" id="backBtn" onclick="goBack()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          Back
+        </button>
+        <!-- Question number label -->
+        <div class="qn" id="qn"></div>
+        <!-- Step progress track (filled by renderQ) -->
+        <div id="ptrack"></div>
+        <!-- Question text -->
+        <div class="qt" id="qt"></div>
+        <!-- Answer option buttons (filled by renderQ) -->
+        <div class="os" id="os"></div>
+      </div>
+    </div>
+
+
+    <!-- ============================================================
+         ARCHETYPE RESULTS PAGE
+         Shown directly after the quiz is completed.
+         Contains animated character, traits, strengths, composition,
+         complemented-by archetypes, and action buttons.
+         ============================================================ -->
+    <div class="card" id="archetypeResultsPage" style="display:none">
+      <div class="rb">
+
+        <!-- Dark hero band: You are, character + aura, tag, name -->
+        <div class="r2-hero">
+          <div class="r2-ya">You are</div>
+          <div class="r2-char-wrap" id="charWrap">
+            <!-- Aura glow (colour set dynamically by showResult) -->
+            <div class="r2-aura" id="rAura"></div>
+            <!-- Archetype character image (src and alt set dynamically by showResult via ARCHETYPE_IMAGES, now Frame 5.png) -->
+            <img id="rCharImg" class="r2-char-img" src="" alt="">
+          </div>
+          <div class="r2-badge" id="r2Badge"></div>
+          <h2 class="r2-name" id="r2Name"></h2>
+        </div>
+
+        <!-- Your Strengths: full-width trait/example table -->
+        <div class="r2-strengths-wrap">
+          <div class="r2-sec-hd" id="r2StrHd">Your Strengths</div>
+          <table class="r2-str-table">
+            <colgroup><col class="r2-str-col-trait"><col></colgroup>
+            <thead>
+              <tr><th>Behaviour</th><th>In Your Day-to-Day</th></tr>
+            </thead>
+            <tbody id="r2StrTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Two-column section: How You Work (donut) + A Rewarding Career in Procurement -->
+        <div class="r2-mid">
+          <div>
+            <div class="r2-sec-hd" id="r2CompHd">How You Work</div>
+            <div class="r2-comp-box">
+              <div class="r2-donut-wrap" id="r2Donut"></div>
+              <div class="r2-comp-legend" id="r2CompLegend"></div>
+            </div>
+          </div>
+          <div>
+            <div class="r2-sec-hd" id="r2CbHd">A Rewarding Career in Procurement</div>
+            <div class="r2-career-box">
+              <div class="r2-career-sub">
+                <div class="r2-career-sub-hd" id="r2WhyExcelHd">Why you can excel</div>
+                <div class="r2-career-sub-body" id="r2WhyExcel"></div>
+              </div>
+              <div class="r2-career-sub">
+                <div class="r2-career-sub-hd" id="r2WhatsInItHd">What's in it for you</div>
+                <div class="r2-career-sub-body" id="r2WhatsInIt"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- P3 card + secondary actions -->
+        <div class="r2-actions-wrap">
+          <button type="button" class="r2-secondary-btn" onclick="resetQuiz()">Retake quest</button>
+          <a href="https://www.mof.gov.sg/careers/procurement-professional-programme/" class="r2-p3-card" id="r2P3Card" target="_blank" rel="noopener noreferrer">
+            <div>
+              <div class="r2-p3-eyebrow" id="r2P3Eyebrow">Take the next step</div>
+              <div class="r2-p3-title" id="r2P3Title">Find out more about P&#179;</div>
+            </div>
+            <div class="r2-p3-arrow" id="r2P3Arrow">&#8594;</div>
+          </a>
+          <button type="button" class="r2-secondary-btn" onclick="openPosterModal()">Meet fellow travellers</button>
+        </div>
+
+        <p class="r2-disclaimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="11"></line><circle cx="12" cy="7.5" r="0.6" fill="currentColor" stroke="none"></circle></svg><span>This quiz is intended for entertainment and self-reflection, not a scientific or psychometric assessment.</span></p>
+
+      </div>
+    </div>
+
+  </div><!-- /#app -->
+
+
+  <script>
+
+    // ============================================================
+    // BACKGROUND PARTICLES
+    // Spawns 16 floating translucent circles/shapes in the background.
+    // ============================================================
+    (function(){
+      var b = document.getElementById('bgs');
+      var c = ['#7a1a1a','#a01c2c','#c41828','#8b0000','#b22020','#991414','#7c1212'];
+      for (var i = 0; i < 16; i++) {
+        var d = document.createElement('div');
+        d.className = 'bgi';
+        var s = 38 + Math.random() * 92;
+        d.style.cssText =
+          'width:' + s + 'px;height:' + s + 'px;left:' + (Math.random() * 100) + '%;' +
+          'background:' + c[i % c.length] + ';' +
+          'animation-duration:' + (18 + Math.random() * 22) + 's;' +
+          'animation-delay:-' + (Math.random() * 18) + 's;' +
+          'border-radius:' + (Math.random() > .5 ? '50%' : '22%');
+        b.appendChild(d);
+      }
+    })();
+
+
+    // ============================================================
+    // SVG HELPER FUNCTIONS
+    // Inline SVG generation utilities for animated scene elements.
+    // ============================================================
+
+    // Twinkling star circle
+    function st(x, y, r, o, d, bg) {
+      return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="white" opacity="' + o + '">' +
+        '<animate attributeName="opacity" values="' + o + ';.1;' + o + '" dur="' + d + 's" begin="' + bg + 's" repeatCount="indefinite"/>' +
+        '</circle>';
+    }
+
+
+    // ============================================================
+    // SCENE SVG DATA
+    // Each key maps to a scene used by a question or the intro/result.
+    // Image-based scenes use <image> tags pointing to local webp files.
+    // ============================================================
+    var SC = {
+
+      // Intro: procedural SVG night cityscape with stars and silhouette buildings
+      intro:
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="#08001a"/><stop offset="55%" stop-color="#2a0848"/><stop offset="100%" stop-color="#7a1a08"/>' +
+        '</linearGradient></defs><rect width="680" height="290" fill="url(#g)"/>' +
+        st(72,44,1.5,.7,2.1,0)+st(158,24,1,.55,1.8,.4)+st(288,54,1.5,.65,2.5,.8)+
+        st(398,29,1,.7,1.9,.2)+st(488,64,1,.5,2.2,.6)+st(568,21,1.5,.75,1.7,1)+
+        st(638,47,1,.6,2.3,.3)+st(102,86,1,.5,1.9,.7)+st(222,74,1.2,.6,2.4,.1)+
+        st(348,84,1,.55,2,.5)+st(448,17,1,.7,1.8,.9)+st(528,69,1.2,.5,2.1,.4)+
+        '<circle cx="598" cy="54" r="18" fill="#fef3c7" opacity=".92"><animate attributeName="opacity" values=".92;1;.92" dur="5s" repeatCount="indefinite"/></circle>'+
+        '<circle cx="607" cy="48" r="14" fill="#2a0848"/>' +
+        // Building silhouettes
+        '<rect x="0" y="190" width="178" height="100" fill="#080015"/><ellipse cx="89" cy="188" rx="52" ry="35" fill="#080015"/>' +
+        '<rect x="68" y="122" width="30" height="70" fill="#080015"/><ellipse cx="83" cy="120" rx="12" ry="18" fill="#080015"/>' +
+        '<rect x="288" y="170" width="104" height="120" fill="#080015"/><ellipse cx="340" cy="168" rx="50" ry="34" fill="#080015"/>' +
+        '<rect x="318" y="102" width="26" height="70" fill="#080015"/><ellipse cx="331" cy="100" rx="11" ry="17" fill="#080015"/>' +
+        '<rect x="498" y="180" width="182" height="110" fill="#080015"/><ellipse cx="589" cy="178" rx="64" ry="43" fill="#080015"/>' +
+        '<rect x="560" y="112" width="36" height="70" fill="#080015"/><ellipse cx="578" cy="110" rx="14" ry="20" fill="#080015"/>' +
+        '<rect x="186" y="207" width="52" height="83" fill="#080015"/>' +
+        '<rect x="433" y="197" width="60" height="93" fill="#080015"/>' +
+        '<rect x="440" y="148" width="14" height="51" fill="#080015"/><ellipse cx="447" cy="146" rx="7" ry="11" fill="#080015"/>' +
+        '<rect y="248" width="680" height="42" fill="#080015"/>',
+
+      // Question scene keys — match image filenames (legacy SVG refs kept for reference only;
+      // question card now uses PNG via QUESTION_IMAGES mapping)
+      Gates:       '<image href="Images/Questions/Gates.png"       x="0" y="0" width="680" height="290" preserveAspectRatio="xMidYMid slice"/>',
+      Food:        '<image href="Images/Questions/Food.png"        x="0" y="0" width="680" height="290" preserveAspectRatio="xMidYMid slice"/>',
+      Creature:    '<image href="Images/Questions/Creature.png"    x="0" y="0" width="680" height="290" preserveAspectRatio="xMidYMid slice"/>',
+      Obstruction: '<image href="Images/Questions/Obstruction.png" x="0" y="0" width="680" height="290" preserveAspectRatio="xMidYMid slice"/>',
+      Portal:      '<image href="Images/Questions/Portal.png"      x="0" y="0" width="680" height="290" preserveAspectRatio="xMidYMid slice"/>',
+
+      // Result screen: procedural dusk cityscape with warm glow gradient
+      result:
+        '<defs>' +
+        '<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="#0e1628"/><stop offset="28%" stop-color="#1c3858"/>' +
+        '<stop offset="58%" stop-color="#c03e0a"/><stop offset="80%" stop-color="#f57316"/>' +
+        '<stop offset="100%" stop-color="#f9bb22"/>' +
+        '</linearGradient>' +
+        '<radialGradient id="sg" cx="50%" cy="90%" r="30%">' +
+        '<stop offset="0%" stop-color="#fbbf24" stop-opacity=".72"/>' +
+        '<stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>' +
+        '</radialGradient>' +
+        '</defs>' +
+        '<rect width="680" height="290" fill="url(#g)"/>' +
+        st(78,26,1.2,.7,2.1,0)+st(218,14,1,.6,1.8,.4)+st(408,27,1.2,.55,2.4,.8)+st(558,17,1,.7,1.9,.2)+
+        '<ellipse cx="340" cy="266" rx="370" ry="124" fill="url(#sg)"/>' +
+        '<ellipse cx="340" cy="276" rx="50" ry="24" fill="#fbbf24" opacity=".9"/>' +
+        // Building silhouettes
+        '<rect x="0" y="222" width="138" height="68" fill="#0e1628"/><ellipse cx="69" cy="220" rx="42" ry="28" fill="#0e1628"/>' +
+        '<rect x="51" y="162" width="26" height="60" fill="#0e1628"/><ellipse cx="64" cy="160" rx="10" ry="15" fill="#0e1628"/>' +
+        '<rect x="268" y="202" width="144" height="88" fill="#0e1628"/><ellipse cx="340" cy="200" rx="62" ry="42" fill="#0e1628"/>' +
+        '<rect x="316" y="142" width="34" height="60" fill="#0e1628"/><ellipse cx="333" cy="140" rx="13" ry="20" fill="#0e1628"/>' +
+        '<rect x="456" y="212" width="124" height="78" fill="#0e1628"/><ellipse cx="518" cy="210" rx="52" ry="35" fill="#0e1628"/>' +
+        '<rect x="494" y="160" width="28" height="52" fill="#0e1628"/><ellipse cx="508" cy="158" rx="11" ry="17" fill="#0e1628"/>' +
+        '<rect x="146" y="230" width="112" height="60" fill="#0e1628"/><ellipse cx="202" cy="228" rx="46" ry="30" fill="#0e1628"/>' +
+        '<rect x="582" y="226" width="98" height="64" fill="#0e1628"/>' +
+        '<rect y="256" width="680" height="34" fill="#0e1628"/>'
+    };
+
+
+    // ============================================================
+    // QUESTION DATA — 5 questions, 3 options each
+    //
+    // Archetype indices: 0 = The Strategist, 1 = The Dealmaker, 2 = The Truthseeker
+    // Scoring: primary archetype +3, secondary archetype +1
+    // Maximum possible score per archetype: 15 points
+    //
+    // Q1 (Gates):       A -> Strategist+3, Dealmaker+1  | B -> Dealmaker+3, Truthseeker+1 | C -> Truthseeker+3, Strategist+1
+    // Q2 (Food):        A -> Truthseeker+3, Dealmaker+1  | B -> Dealmaker+3, Strategist+1 | C -> Strategist+3, Truthseeker+1
+    // Q3 (Creature):    A -> Truthseeker+3, Dealmaker+1  | B -> Dealmaker+3, Truthseeker+1 | C -> Strategist+3, Dealmaker+1
+    // Q4 (Obstruction): A -> Dealmaker+3, Truthseeker+1  | B -> Strategist+3, Truthseeker+1 | C -> Truthseeker+3, Strategist+1
+    // Q5 (Portal):      A -> Strategist+3, Dealmaker+1  | B -> Dealmaker+3, Truthseeker+1 | C -> Truthseeker+3, Strategist+1
+    //
+    // Note: Scene keys (sc) and location labels (loc) are placeholders and
+    // can be updated independently without affecting scoring or functionality.
+    // ============================================================
+    var QS = [
+
+      // ── Q1: Arrival — first instinct in an unfamiliar environment ──────────
+      {
+        sc:'Gates', loc:'The City Gates',
+        q:"Your delivery notification flashes. Unexpectedly, you're pulled through the screen into the Grand Bazaar, left with just a coin pouch and your confusion. How do you react?",
+        opts:[
+          {l:'A', t:'Observe how things are moving in the Bazaar before planning what to do.', sc:{0:3,1:1}},
+          {l:'B', t:'Approach a nearby merchant, explain your situation, and ask for clarity.',  sc:{1:3,2:1}},
+          {l:'C', t:'Look around for a sign or map, hoping to find a way out.',                  sc:{2:3,0:1}}
+        ]
+      },
+
+      // ── Q2: Hunger — evaluating and choosing between options ───────────────
+      {
+        sc:'Food', loc:'The Negotiation Tent',
+        q:'Your stomach growls. You need energy to get home and rest. Three snack stalls catch your eye. How do you pick?',
+        opts:[
+          {l:'A', t:'The one with the longest queue. The proof is right there.',          sc:{2:3,1:1}},
+          {l:'B', t:'You ask nearby merchants which stall they personally recommend.',     sc:{1:3,0:1}},
+          {l:'C', t:'You compare across all three for the best value for your coins.',     sc:{0:3,2:1}}
+        ]
+      },
+
+      // ── Q3: The creature — negotiating with an unknown party ───────────────
+      {
+        sc:'Creature', loc:'The Supply Depot',
+        q:'Midway through your snacks, a creature appears as if reading your mind, offering to lead you home for a price. What do you offer?',
+        opts:[
+          {l:'A', t:'Gold coins, the most universally valuable thing you have.',  sc:{2:3,1:1}},
+          {l:'B', t:"Your company, since you've always been a good friend.",     sc:{1:3,2:1}},
+          {l:'C', t:'You ask what it wants to best appease it.',                 sc:{0:3,1:1}}
+        ]
+      },
+
+      // ── Q4: Blocked path — responding to conflict and disruption ──────────
+      {
+        sc:'Obstruction', loc:'The Council Chamber',
+        q:'The creature leads you onwards, but two merchants block your path, arguing loudly. How do you clear the way?',
+        opts:[
+          {l:'A', t:'You hear both sides and help them strike a fair deal.',          sc:{1:3,2:1}},
+          {l:'B', t:'You observe the situation closely before deciding how to act.',  sc:{0:3,2:1}},
+          {l:'C', t:"You suggest looking into the Bazaar's rulebook, if there is one.", sc:{2:3,0:1}}
+        ]
+      },
+
+      // ── Q5: The portal — final reflection on values and identity ──────────
+      {
+        sc:'Portal', loc:'The Whispering Crossroads',
+        q:'A shimmering portal home appears. You glance back at the Grand Bazaar. What crosses your mind?',
+        opts:[
+          {l:'A', t:'Satisfied. It broke the monotony and pushed you past your limits.',          sc:{0:3,1:1}},
+          {l:'B', t:'Wistful. You hope for a next time to learn its stories and people.',          sc:{1:3,2:1}},
+          {l:'C', t:"Relieved. You made it through, ready for the comfort of home.",              sc:{2:3,0:1}}
+        ]
+      }
+
+    ];
+
+
+    // ============================================================
+    // ARCHETYPE DATA - 3 archetypes: The Strategist (0), The Dealmaker (1), The Truthseeker (2)
+    // Each object contains:
+    //   e               - emoji icon
+    //   n               - archetype name
+    //   sub             - subtitle / tagline
+    //   c               - primary colour (hex)
+    //   lt              - light tint background colour
+    //   br              - border/accent colour
+    //   desc            - long description paragraph
+    //   tags            - 3 keyword tags
+    //   pct             - percentage of guild members with this archetype
+    //   traits          - 5 short trait labels
+    //   strengths       - 3 strength statements
+    //   composition     - workstyle composition breakdown (pct + label), powers donut chart
+    //   donutShades     - 3 tonal shades of archetype colour (dark/mid/light), donut segments
+    //   auraColor       - optional override for aura background colour (falls back to c if absent)
+    //   complemented_by - indices of the 2 complementary archetypes (data retained; no longer rendered)
+    //   whyProcurement  - legacy paragraph, retained but no longer rendered
+    //   strengthsTable  - 3 {trait, example} pairs, shown in Your Strengths table
+    //   whyExcel        - paragraph for "Why You Can Excel" sub-section
+    //   whatsInItForYou - paragraph for "What's In It For You" sub-section
+    // ============================================================
+    var AR = [
+      // Index 0: The Strategist
+      {
+        e:'&#x1F9ED;', n:'The Strategist', sub:'Systems-Oriented',
+        c:'#1d4ed8', lt:'#eff6ff', br:'#bfdbfe',
+        donutShades:['#1d4ed8','#378add','#85b7eb'],
+        desc:'You read the room before you act. In the Bazaar, you map the terrain, anticipate the obstacles, and build a plan before anyone else has taken a single step. Your greatest strength is knowing that the right preparation makes every decision easier.',
+        tags:['Big-Picture Thinking','Planning','Risk Awareness'],
+        pct:34,
+        traits:['Plan first','See the whole board','Risks before they happen','Structured thinker','Calm under complexity'],
+        strengths:[
+          'Maps complex situations before acting, reducing costly surprises',
+          'Structures decisions and processes for clarity and repeatability',
+          'Anticipates risks and builds contingencies others overlook'
+        ],
+        strengthsTable:[
+          {trait:'<strong>Maps</strong> situations before acting', example:'Checking reviews and past papers before picking modules'},
+          {trait:'<strong>Structures decisions</strong>', example:'Building a study timetable for every exam season'},
+          {trait:'<strong>Anticipates risk</strong> before it happens', example:'Packing a power bank, panadol, and plasters before a long trip'}
+        ],
+        composition:[
+          {pct:44, lbl:'Planning'},
+          {pct:32, lbl:'Risk'},
+          {pct:24, lbl:'Systems'}
+        ],
+        complemented_by:[1,2],
+        whyProcurement:'The Bazaar rewarded you for seeing three steps ahead, and procurement runs on exactly that instinct. Every sourcing decision, supplier negotiation, and contract structure benefits from someone who maps risk before it becomes a problem. In procurement, your planning mindset doesn\'t just prevent costly mistakes, it shapes the strategy that lets entire organisations move with confidence.',
+        whyExcel:'You enjoy connecting ideas, spotting opportunities, and thinking ahead. <strong>Strategy &amp; Policy</strong> and <strong>Sourcing &amp; Category Management</strong> need exactly that: people who can shape decisions and create value at a national level.',
+        whatsInItForYou:'Through P&#179;\'s job attachments, you\'ll see how strategy plays out across different government agencies. Hands-on courses, dialogues with senior leaders, and a community of peers sharpen that thinking into expertise you can carry into any room.'
+      },
+      // Index 1: The Dealmaker
+      {
+        e:'&#x1F91D;', n:'The Dealmaker', sub:'Relationship-Oriented',
+        c:'#946200', lt:'#FFD96B', br:'#fcd34d',
+        donutShades:['#946200','#c08400','#FFD129'],
+        desc:'You thrive in the market\'s energy. You read people as readily as you read contracts, and you know that the best deals are built on trust, not just terms. Where others see a transaction, you see an opportunity to build something that lasts.',
+        tags:['Negotiation','Influence','Partnership'],
+        pct:38,
+        traits:['People first','Trust is currency','Find the angle','Confident in the room','Built to close'],
+        strengths:[
+          'Builds trust quickly, unlocking deals others cannot reach',
+          'Navigates negotiations with confidence and creative thinking',
+          'Turns stakeholder relationships into lasting strategic assets'
+        ],
+        strengthsTable:[
+          {trait:'Builds <strong>trust</strong> quickly', example:'Befriending the hawker aunties and uncles for extra portions'},
+          {trait:'<strong>Negotiates</strong> with confidence', example:'Haggling at a flea market until both sides find a win-win situation'},
+          {trait:'Builds <strong>lasting relationships</strong>', example:'Staying in touch, since you never know when it\'ll pay off'}
+        ],
+        composition:[
+          {pct:42, lbl:'Negotiation'},
+          {pct:33, lbl:'Influence'},
+          {pct:25, lbl:'Creativity'}
+        ],
+        complemented_by:[0,2],
+        whyProcurement:'You read people as well as you read situations, and that\'s the heart of every great procurement relationship. Strong supplier partnerships, smart negotiations, and deals that work for everyone all start with someone who knows how to build trust quickly. In procurement, that instinct grows into real influence, the kind that shapes outcomes long after the contract is signed.',
+        whyExcel:'You thrive when bringing people together, building trust, and finding solutions that work for everyone. <strong>Sourcing &amp; Category Management</strong> and <strong>Contract &amp; Supplier Management</strong> depend on people who can turn relationships and negotiation into real outcomes.',
+        whatsInItForYou:'P&#179;\'s two-year rotations put you in front of real suppliers and stakeholders across different agencies. Along the way, courses, mentorship from senior leaders, and team bonding with fellow Procurement Professionals turn your natural knack for people into a genuine professional network.'
+      },
+      // Index 2: The Truthseeker
+      {
+        e:'&#x1F6E1;', n:'The Truthseeker', sub:'Integrity-Oriented',
+        c:'#059669', lt:'#ecfdf5', br:'#a7f3d0',
+        donutShades:['#059669','#34d399','#a7f3d0'],
+        auraColor:'#34D399',
+        desc:'You are the one who makes sure nothing slips through. In the Bazaar, you uphold the rules, protect the process, and ensure that every agreement is honoured. Others move fast; you make sure they move right.',
+        tags:['Integrity','Compliance','Due Diligence'],
+        pct:28,
+        traits:['Nothing slips through','Rules exist for a reason','Accountable by default','Process protects people','Steady and reliable'],
+        strengths:[
+          'Ensures every commitment is tracked, understood, and delivered on',
+          'Upholds standards and governance with rigour and consistency',
+          'Creates accountability structures that protect all parties'
+        ],
+        strengthsTable:[
+          {trait:'<strong>Tracks</strong> every commitment', example:'Reminding group project members of their roles and deadlines'},
+          {trait:'<strong>Upholds standards</strong> consistently', example:'Sticking to the rules, even when bending them would be easier'},
+          {trait:'<strong>Protects</strong> all parties', example:'Taking and encouraging accountability when things go wrong'}
+        ],
+        composition:[
+          {pct:40, lbl:'Governance'},
+          {pct:35, lbl:'Integrity'},
+          {pct:25, lbl:'Accountability'}
+        ],
+        complemented_by:[0,1],
+        whyProcurement:'You\'re the one who makes sure things are done right, and procurement needs that more than almost any other field. Every contract, audit, and compliance check exists to protect people and resources, and that\'s where your strengths quietly create the most value. In procurement, your commitment to integrity becomes the foundation that lets entire supply chains run with trust.',
+        whyExcel:'You take pride in doing things properly and creating confidence in the decisions people make. <strong>Strategy &amp; Policy</strong>, <strong>Procurement Operations</strong>, and <strong>Contract &amp; Supplier Management</strong> rely on people who ensure fairness, transparency, and prudent spending of public funds.',
+        whatsInItForYou:'P&#179; gives you hands-on exposure to the systems and safeguards behind government spending. Structured training, guidance from senior leaders, and a tight-knit cohort turn that integrity into a reputation that opens doors.'
+      }
+    ];
+
+
+    // ============================================================
+    // ARCHETYPE IMAGE MAPPING
+    // Maps each archetype index (0-2) to its Frame 5.png in Images/Archetypes/.
+    // Static image only — frame-cycling animation removed per design update.
+    // ============================================================
+    var ARCHETYPE_IMAGES = {
+      0: 'Images/Archetypes/The Strategist/Frame 5.png',
+      1: 'Images/Archetypes/The Dealmaker/Frame 5.png',
+      2: 'Images/Archetypes/The Truthseeker/Frame 5.png'
+    };
+
+    // ============================================================
+    // QUESTION IMAGE MAPPING
+    // Keys are internal scene identifiers (set via q.sc in the QS array).
+    // Maps each scene key to its PNG in Images/Questions/ using a
+    // relative path — GitHub/GitHub Pages-friendly, no absolute paths.
+    // ============================================================
+    var QUESTION_IMAGES = {
+      Gates:       'Images/Questions/Teleport.png',
+      Food:        'Images/Questions/Snacks.png',
+      Creature:    'Images/Questions/Owl.png',
+      Obstruction: 'Images/Questions/Obstruction.png',
+      Portal:      'Images/Questions/Portal.png'
+    };
+
+
+    // ============================================================
+    // QUIZ STATE
+    // answers - array of selected option indices (null = unanswered)
+    // cur     - current question index (0-based)
+    // busy    - debounce flag to prevent double-clicks during transitions
+    // ============================================================
+    var answers, cur, busy;
+
+    // ============================================================
+    // SCORING
+    // Tallies points across all answered questions.
+    // Primary archetype per answer: +3 points.
+    // Secondary archetype per answer: +1 point.
+    // Maximum possible score per archetype: 15 points.
+    // Returns an array [strategistScore, dealmakerScore, guardianScore].
+    // ============================================================
+    function getScores() {
+      var s = [0, 0, 0];
+      answers.forEach(function(ai, qi) {
+        if (ai !== null) {
+          var sc = QS[qi].opts[ai].sc;
+          for (var k in sc) { s[+k] += sc[k]; }
+        }
+      });
+      return s;
+    }
+
+
+    // ============================================================
+    // SVG SCENE SWITCHER
+    // Fades out the SVG element, swaps content, fades back in.
+    // ============================================================
+    function setSvg(id, key) {
+      var el = document.getElementById(id);
+      el.style.transition = 'opacity .5s';
+      el.style.opacity = '0';
+      setTimeout(function() {
+        el.innerHTML = SC[key];
+        el.style.opacity = '1';
+      }, 80);
+    }
+
+
+    // ============================================================
+    // PROGRESS TRACK UPDATE
+    // (No-op placeholder - progress track is rebuilt inside renderQ)
+    // ============================================================
+    function upProg() {}
+
+
+    // ============================================================
+    // CONFETTI
+    // Spawns 68 confetti pieces in the archetype's colour palette.
+    // Each piece falls and rotates off-screen, then is removed from DOM.
+    // ============================================================
+    function confetti(mc) {
+      var pal = [mc, '#fbbf24', '#d97706', '#1e3a5f', '#92400e', '#f97316', '#fff8ec'];
+      for (var i = 0; i < 68; i++) {
+        (function(i) {
+          setTimeout(function() {
+            var el = document.createElement('div');
+            el.className = 'cf';
+            var s = 5 + Math.random() * 9;
+            el.style.cssText =
+              'left:' + (8 + Math.random() * 84) + '%;top:0;' +
+              'width:' + s + 'px;height:' + s + 'px;' +
+              'background:' + pal[Math.floor(Math.random() * pal.length)] + ';' +
+              'border-radius:' + (Math.random() > .5 ? '50%' : '3px') + ';' +
+              'animation-duration:' + (1.8 + Math.random() * 2) + 's;' +
+              'animation-delay:' + (Math.random() * .7) + 's';
+            document.body.appendChild(el);
+            setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 5000);
+          }, i * 18);
+        })(i);
+      }
+    }
+
+
+    // ============================================================
+    // START QUIZ
+    // Resets state, hides intro card, shows question card.
+    // ============================================================
+    function startQuiz() {
+      answers = new Array(QS.length).fill(null);
+      cur = 0;
+      busy = false;
+      document.getElementById('iCard').style.display = 'none';
+      var qc = document.getElementById('qCard');
+      qc.style.display = '';
+      qc.classList.add('qc-visible');
+      qc.style.opacity = '1';
+      qc.style.transform = '';
+      qc.classList.remove('cin');
+      qc.offsetHeight; // force reflow to restart animation
+      qc.classList.add('cin');
+      upProg();
+      renderQ();
+    }
+
+
+    // ============================================================
+    // RENDER QUESTION
+    // Populates the question card with data for the current question.
+    // Rebuilds the progress track and staggered answer option buttons.
+    // ============================================================
+    function renderQ() {
+      var q = QS[cur];
+
+      // Update question scene image
+      var qImg = document.getElementById('qImg');
+      if (qImg && QUESTION_IMAGES[q.sc]) {
+        qImg.src = QUESTION_IMAGES[q.sc];
+        qImg.alt = q.sc || q.loc || 'Question scene'; // sc key matches filename (e.g. Gates, Food)
+      }
+
+      // Update question number label
+      document.getElementById('qn').textContent = 'Question ' + (cur + 1) + ' of ' + QS.length;
+
+      // Update question text
+      document.getElementById('qt').textContent = q.q;
+
+      // Show/hide back button
+      var bb = document.getElementById('backBtn');
+      if (cur > 0) { bb.classList.remove('hidden'); } else { bb.classList.add('hidden'); }
+
+      // Rebuild progress track dots
+      var pt = document.getElementById('ptrack');
+      pt.innerHTML = '';
+      for (var pi = 0; pi < QS.length; pi++) {
+        var ps = document.createElement('div');
+        ps.className = 'pts' + (pi < cur ? ' done' : pi === cur ? ' active' : '');
+        pt.appendChild(ps);
+      }
+
+      // Rebuild answer option buttons (staggered entrance animation)
+      var os = document.getElementById('os');
+      os.innerHTML = '';
+      q.opts.forEach(function(o, i) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ob' + (answers[cur] === i ? ' sel' : '');
+        b.innerHTML = '<div class="ob-inner"><span class="ol">' + o.l + '</span><span>' + o.t + '</span></div>';
+        b.onclick = function() { pick(i, b); };
+        os.appendChild(b);
+        setTimeout(function() { b.classList.add('in'); }, 300 + i * 65);
+      });
+    }
+
+
+    // ============================================================
+    // PICK ANSWER
+    // Records the selected answer, then advances to the next question
+    // or triggers showResult() if all questions are answered.
+    // ============================================================
+    function pick(optIdx, btn) {
+      if (busy) return;
+      busy = true;
+
+      // Highlight selected option
+      var btns = document.querySelectorAll('#os .ob');
+      for (var i = 0; i < btns.length; i++) { btns[i].classList.remove('sel'); }
+      btn.classList.add('sel');
+      answers[cur] = optIdx;
+
+      setTimeout(function() {
+        cur++;
+        upProg();
+        if (cur < QS.length) {
+          // Animate card out, swap question, animate back in
+          var qc = document.getElementById('qCard');
+          qc.style.transition = 'opacity .3s,transform .3s';
+          qc.style.opacity = '0';
+          qc.style.transform = 'translateY(-14px)';
+          setTimeout(function() {
+            qc.style.opacity = '1';
+            qc.style.transform = '';
+            renderQ();
+            busy = false;
+          }, 340);
+        } else {
+          showResult();
+        }
+      }, 380);
+    }
+
+
+    // ============================================================
+    // GO BACK
+    // Decrements current question index and re-renders the question card.
+    // ============================================================
+    function goBack() {
+      if (cur <= 0 || busy) return;
+      busy = true;
+      var qc = document.getElementById('qCard');
+      qc.style.transition = 'opacity .28s,transform .28s';
+      qc.style.opacity = '0';
+      qc.style.transform = 'translateY(14px)';
+      setTimeout(function() {
+        cur--;
+        upProg();
+        qc.style.opacity = '1';
+        qc.style.transform = '';
+        renderQ();
+        setTimeout(function() { busy = false; }, 320);
+      }, 300);
+    }
+
+
+    // ============================================================
+    // DONUT CHART BUILDER
+    // Generates a 3-segment donut ring SVG from an archetype's
+    // composition data (pct + label per segment), using the
+    // archetype's tonal donutShades (dark/mid/light of one hue)
+    // so the chart itself reflects the archetype's colour identity.
+    // ============================================================
+    function buildDonutSVG(composition, shades) {
+      var r = 35, circumference = 2 * Math.PI * r;
+      var offset = 0;
+      var segments = composition.map(function(ci, i) {
+        var len = (ci.pct / 100) * circumference;
+        var seg = '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + shades[i] + '" stroke-width="14" ' +
+          'stroke-dasharray="' + len + ' ' + circumference + '" stroke-dashoffset="' + (-offset) + '" transform="rotate(-90 50 50)"/>';
+        offset += len;
+        return seg;
+      }).join('');
+      return '<svg viewBox="0 0 100 100" width="70" height="70">' +
+        '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="#f1efe8" stroke-width="14"/>' +
+        segments +
+        '</svg>';
+    }
+
+
+    // ============================================================
+    // SHOW RESULT
+    // Calculates scores, identifies the winning archetype, populates
+    // the Archetype Results Page, then transitions directly to it.
+    // ============================================================
+    function showResult() {
+      var scores = getScores();
+      var mx = Math.max.apply(null, scores);
+      var ti = scores.indexOf(mx);
+      var a = AR[ti];
+
+      // Set aura colour — uses a dedicated auraColor field if present (currently only
+      // set for The Truthseeker, for visibility against the dark hero band), otherwise
+      // falls back to the main accent colour a.c as before.
+      document.getElementById('rAura').style.background = a.auraColor || a.c;
+
+      // Set archetype character image — Frame 1.png displayed statically
+      var charImg = document.getElementById('rCharImg');
+      charImg.src = ARCHETYPE_IMAGES[ti];
+      charImg.alt = a.n;
+
+      // Archetype badge (sub-title), coloured against the dark hero band
+      var badge = document.getElementById('r2Badge');
+      badge.textContent = a.sub;
+      badge.style.color = a.lt;
+
+      // Archetype name
+      document.getElementById('r2Name').textContent = a.n;
+
+      // Section headers — tinted with archetype colour (System 4)
+      document.getElementById('r2StrHd').style.color = a.c;
+      document.getElementById('r2CompHd').style.color = a.c;
+      document.getElementById('r2CbHd').style.color = a.c;
+
+      // Your Strengths table — Trait / Examples rows
+      document.getElementById('r2StrTableBody').innerHTML = a.strengthsTable.map(function(row) {
+        return '<tr><td>' + row.trait + '</td><td>' + row.example + '</td></tr>';
+      }).join('');
+
+      // How You Work donut chart, coloured with archetype tonal shades
+      document.getElementById('r2Donut').innerHTML = buildDonutSVG(a.composition, a.donutShades);
+
+      // Donut legend — dot + label + percentage per segment
+      document.getElementById('r2CompLegend').innerHTML = a.composition.map(function(ci, i) {
+        return '<div><span class="r2-comp-dot" style="background:' + a.donutShades[i] + '"></span>' + ci.lbl + ' ' + ci.pct + '%</div>';
+      }).join('');
+
+      // A Rewarding Career in Procurement — Why You Can Excel / What's In It For You
+      document.getElementById('r2WhyExcelHd').style.color = a.c;
+      document.getElementById('r2WhyExcel').innerHTML = a.whyExcel;
+      document.getElementById('r2WhatsInItHd').style.color = a.c;
+      document.getElementById('r2WhatsInIt').innerHTML = a.whatsInItForYou;
+
+      // P3 card colours are static MOF maroon (set in CSS), not archetype-specific
+
+      // Transition: hide question card, show archetype results page directly
+      var qc = document.getElementById('qCard');
+      qc.style.transition = 'opacity .3s,transform .3s';
+      qc.style.opacity = '0';
+      qc.style.transform = 'translateY(-14px)';
+      setTimeout(function() {
+        qc.style.display = 'none';
+        qc.classList.remove('qc-visible');
+        var gc = document.getElementById('archetypeResultsPage');
+        gc.style.display = 'block';
+        gc.classList.remove('cin');
+        gc.offsetHeight; // force reflow
+        gc.classList.add('cin');
+        confetti(a.c);
+        busy = false;
+      }, 360);
+    }
+
+
+
+
+    // ============================================================
+    // RESET QUIZ
+    // Clears all state and returns to the intro card.
+    // ============================================================
+    function resetQuiz() {
+      answers = new Array(QS.length).fill(null);
+      cur = 0;
+      busy = false;
+      document.getElementById('archetypeResultsPage').style.display = 'none';
+      var ic = document.getElementById('iCard');
+      ic.style.display = 'block';
+      ic.classList.remove('cin');
+      ic.offsetHeight; // force reflow
+      ic.classList.add('cin');
+      setSvg('iSvg', 'intro');
+    }
+
+    // ============================================================
+    // ARCHETYPES POSTER MODAL
+    // Opens/closes the full-poster overlay triggered by the
+    // "Meet fellow travellers" button on the results page.
+    // ============================================================
+    function openPosterModal() {
+      document.getElementById('posterModal').classList.add('open');
+    }
+    function closePosterModal() {
+      document.getElementById('posterModal').classList.remove('open');
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closePosterModal();
+    });
+
+
+    // ============================================================
+    // INIT: Set intro scene SVG on page load
+    // ============================================================
+    setSvg('iSvg', 'intro');
+
+
+    // ============================================================
+    // SPARKLE PARTICLES
+    // Spawns 5 floating sparkle dots around the character illustration.
+    // ============================================================
+    (function(){
+      var wrap = document.getElementById('charWrap');
+      if (!wrap) return;
+      var cols = ['#fbbf24','#d97706','#fef3c7','#f59e0b'];
+      for (var i = 0; i < 5; i++) {
+        var p = document.createElement('div');
+        p.className = 'spar';
+        var s = 3 + Math.random() * 3;
+        p.style.cssText =
+          'width:' + s + 'px;height:' + s + 'px;' +
+          'background:' + cols[i % cols.length] + ';' +
+          'left:' + (18 + Math.random() * 66) + '%;' +
+          'top:' + (24 + Math.random() * 44) + '%;' +
+          'animation-duration:' + (2.2 + Math.random() * 2.4) + 's;' +
+          'animation-delay:-' + (Math.random() * 2.4) + 's;' +
+          'opacity:0';
+        wrap.appendChild(p);
+      }
+    })();
+
+  </script>
+  <!-- Archetypes poster modal — opened by "Meet fellow travellers" button -->
+  <div class="poster-modal" id="posterModal" onclick="if(event.target===this) closePosterModal()">
+    <div class="poster-modal-inner">
+      <button type="button" class="poster-modal-close" onclick="closePosterModal()" aria-label="Close">&#10005;</button>
+      <img src="Images/Archetypes_Poster.png" alt="About the Archetypes: The Strategist, The Dealmaker, and The Truthseeker">
+    </div>
+  </div>
+
+</body>
+</html>
