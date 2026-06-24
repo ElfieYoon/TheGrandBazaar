@@ -833,7 +833,7 @@
       // ── Q1: Arrival — first instinct in an unfamiliar environment ──────────
       {
         sc:'Gates', loc:'The City Gates',
-        q:"Your delivery notification flashes. Unexpectedly, you're pulled through the screen into the Grand Bazaar, left with just a coin pouch and your confusion. How do you react?",
+        q:"Your delivery notification flashes. Unexpectedly, you're pulled through the screen into the Grand Bazaar, along with a coin pouch and your confusion. What's your instinct?",
         opts:[
           {l:'A', t:'Observe how things are moving in the Bazaar before planning what to do.', sc:{0:3,1:1}},
           {l:'B', t:'Approach a nearby merchant, explain your situation, and ask for clarity.',  sc:{1:3,2:1}},
@@ -844,7 +844,7 @@
       // ── Q2: Hunger — evaluating and choosing between options ───────────────
       {
         sc:'Food', loc:'The Negotiation Tent',
-        q:'Your stomach growls. You need energy to get home and rest. Three snack stalls catch your eye. How do you pick?',
+        q:'Your stomach growls. You need energy to get home. Three snack stalls catch your eye. How do you pick?',
         opts:[
           {l:'A', t:'The one with the longest queue. The proof is right there.',          sc:{2:3,1:1}},
           {l:'B', t:'You ask nearby merchants which stall they personally recommend.',     sc:{1:3,0:1}},
@@ -855,7 +855,7 @@
       // ── Q3: The creature — negotiating with an unknown party ───────────────
       {
         sc:'Creature', loc:'The Supply Depot',
-        q:'Midway through your snacks, a creature appears as if reading your mind, offering to lead you home for a price. What do you offer?',
+        q:'Midway through your snacks, a mythical creature senses that you are lost and offers to lead you home for a price. What do you offer?',
         opts:[
           {l:'A', t:'Gold coins, the most universally valuable thing you have.',  sc:{2:3,1:1}},
           {l:'B', t:"Your company, since you've always been a good friend.",     sc:{1:3,2:1}},
@@ -868,16 +868,16 @@
         sc:'Obstruction', loc:'The Council Chamber',
         q:'The creature leads you onwards, but two merchants block your path, arguing loudly. How do you clear the way?',
         opts:[
-          {l:'A', t:'You hear both sides and help them strike a fair deal.',          sc:{1:3,2:1}},
+          {l:'A', t:'You hear both sides and help them resolve the dispute fairly.',          sc:{1:3,2:1}},
           {l:'B', t:'You observe the situation closely before deciding how to act.',  sc:{0:3,2:1}},
-          {l:'C', t:"You suggest looking into the Bazaar's rulebook, if there is one.", sc:{2:3,0:1}}
+          {l:'C', t:"You ask if there are existing rules the Bazaar uses that will solve this.", sc:{2:3,0:1}}
         ]
       },
 
       // ── Q5: The portal — final reflection on values and identity ──────────
       {
         sc:'Portal', loc:'The Whispering Crossroads',
-        q:'A shimmering portal home appears. You glance back at the Grand Bazaar. What crosses your mind?',
+        q:'A shimmering portal home appears. As you glance back at the Grand Bazaar, what crosses your mind?',
         opts:[
           {l:'A', t:'Satisfied. It broke the monotony and pushed you past your limits.',          sc:{0:3,1:1}},
           {l:'B', t:'Wistful. You hope for a next time to learn its stories and people.',          sc:{1:3,2:1}},
